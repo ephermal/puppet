@@ -1,0 +1,93 @@
+rm -f /etc/nsswitch.conf
+
+cat <<EOT>> /etc/nsswitch.conf
+passwd:         files
+shadow:         files
+group:          files
+hosts:          files dns
+bootparams:     files
+ethers:         files
+netmasks:       files
+networks:       files
+protocols:      files
+rpc:            files
+services:       files
+netgroup:       files
+publickey:      files
+automount:      files
+aliases:        files
+EOT
+
+yum -y remove puppet
+rm -f /etc/yum.repos.d/vmware.repo
+rm -f /etc/yum.repos.d/puppetlabs.repo
+pkill /var/cfengine/bin/cfexecd
+rm -rf /var/cfengine
+
+service ntpd stop
+ntpdate $ntpserver
+service ntpd start
+
+
+rpm -ivh https://yum.puppetlabs.com/puppetlabs-release-pc1-el-6.noarch.rpm
+
+
+yum -y install puppet-agent
+
+rm -f /etc/puppetlabs/puppet/puppet.conf 
+
+ 
+cat <<EOT>> /etc/puppetlabs/puppet/puppet.conf 
+server = ic-puppet.ic.intel.com
+environment = production
+runinterval = 1h
+EOT
+
+
+chkconfig puppet on
+
+service puppet start
+
+sleep 5
+
+
+
+
+5
+
+cat <<EOT>> /etc/yum.repos.d/puppet.repo
+[puppetlabs-pc1]
+name=Puppet Labs PC1 Repository el 5 - $basearch
+baseurl=http://yum.puppetlabs.com/el/5/PC1/$basearch
+enabled=1
+gpgcheck=0
+
+EOT
+
+
+yum clean all
+
+yum -y install puppet-agent
+
+ 
+rm -f /etc/puppetlabs/puppet/puppet.conf 
+
+ 
+cat <<EOT>> /etc/puppetlabs/puppet/puppet.conf 
+server = ic-puppet.ic.intel.com
+environment = production
+runinterval = 1h
+EOT
+
+
+chkconfig puppet on
+
+service puppet start
+
+/opt/puppetlabs/bin/puppet agent -t --debug
+
+
+export HTTP_PROXY=""
+export HTTPS_PROXY=""
+export http_proxy=""
+export https_proxy=""
